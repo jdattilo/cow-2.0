@@ -1,0 +1,31 @@
+.table {
+    display:table;
+}
+.header {
+    display:table-header-group;
+    font-weight:bold;
+}
+.rowGroup {
+    display:table-row-group;
+}
+.row {
+    display:table-row;
+}
+.cell {
+    display:table-cell;
+    padding-left:.5em;
+    padding-right:.5em;
+}
+
+.alignright {
+    float:right;
+}
+
+.resolution-Fixed, .resolution-Duplicate, .resolution-Invalid { text-decoration: line-through;}
+
+.FAIL, .offline, .unreachable {background-color:#e88;} 
+.TBD {background-color:#FF6600;} 
+.PASS {background-color:#8d4;} 
+.INVL, .idle {background-color: #D7D7D7;} 
+.headelement {background-color:lightblue;}
+.building, .HIGHLIGHT, .IPROG {background-color:#FFF140;} 

@@ -1,0 +1,351 @@
+<!doctype html>
+<html>
+<head>
+	<title>COW Dashboard QAVM53</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <link rel="stylesheet" type="text/css" href="http://cattle.yourdomain.com/static/css/basicviewscheme.css">
+    <style>
+
+    html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%; 
+    }
+
+    .content {
+        min-height: 100%;
+        position: relative;
+        overflow: auto;
+        z-index: 0; 
+    }
+
+    .background {
+        position: absolute;
+        z-index: -1;
+        top: 0;
+        bottom: 0;
+        margin: 0;
+        padding: 0;
+    }
+
+    .top_block {
+        width: 100%;
+        display: block; 
+    }
+
+    .bottom_block {
+        position: absolute;
+        width: 100%;
+        display: block;
+        bottom: 0; 
+    }
+
+    .left_block {
+        display: block;
+        float: left; 
+    }
+
+    .right_block {
+        display: block;
+        float: right; 
+    }
+
+    .center_block {
+        display: block;
+        width: auto; 
+    }
+
+    .AE2 {
+        width: 100%;
+        height: 70px;
+        background-color: #FCCECE;
+    }
+
+    .background.CLUSTER {
+        height: auto !important;
+        padding-bottom: 0;
+        right: 0;
+        width: 25%;
+        background-color: #D7D7D7;
+        margin-top: 70px; 
+    }
+
+    .CLUSTER {
+        height: auto;
+        width: 25%;
+        padding-bottom: 0px;
+    }
+
+    .background.TESTING {
+        height: auto !important;
+        padding-bottom: 0;
+        left: 0;
+        right: 0;
+        background-color: #FBFBFB;
+        margin-top: 70px;
+        margin-right: 266px; 
+    }
+
+    .TESTING {
+        width: auto;
+        height: auto;
+        padding-bottom: 0px;
+
+    }
+        
+    
+textarea {
+     width: 100%;
+     -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
+     -moz-box-sizing: border-box;    /* Firefox, other Gecko */
+     box-sizing: border-box;         /* Opera/IE 8+ */
+}
+
+.circle {
+	border-radius: 50%;
+	width: 30px;
+	height: 30px;    
+	/* width and height can be anything, as long as they're equal */
+    border: 2px solid #999999;
+}
+
+.center {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+    
+    </style>
+
+</head>
+
+<body>
+	<div class="content">
+		<div class="top_block AE2">
+			<div class="content">            
+            
+            <div style="float:right;">
+            <span style="float:right;padding-right:1em;margin-top:0px;">Idle<div class="circle center" style="background-color:gray;"></div></span>
+            <span style="float:right;padding-right:1em;margin-top:0px;">Out of Sync<div class="circle center" style="background-color:red;"></div></span>
+            <span style="float:right;padding-right:1em;margin-top:0px;">Present<div class="circle center" style="background-color:green;"></div></span>
+            </div>
+            
+            <center><h4 style="margin-top:0em;">AE2 Management</h4></center>
+            <span><form style="display:inline;">
+                AE2 directory:<input type="text" id="ae2directory" size="25" value="/root/ae2">
+                <input type="submit" value ="Change" alt="Changes directory that AE2 is installed in, does not implicitly download AE2 unless pull AE2 is already checked.">
+            </form></span>
+            <span><form style="display:inline;">
+                Branch:<select name="ae2branch">
+                        <option value="trunk">Trunk</option>
+                        <option value="ae2">AE2</option>
+                        <option value="butterjunk">Butterjunk</option>
+                        </select>
+                Revision:<select name="ae2revision">
+                        <option value="head">HEAD</option>
+                        <option value="1234">1234</option>
+                        <option value="1233">1233</option>
+                        </select>
+                <input type="submit" value ="Pull" alt="Attempts an SVN pull into the selected directory. Warning: Deletes directory contents.">
+            </form></span>
+            <span><form style="display:inline;" alt="Generates suite and environment files.">
+                <input type="submit" value ="Sync">
+            </form></span>
+            
+            <span><form style="display:inline;" alt="Should an AE2 Pull and cluster/suite sync be performed automatically?">
+                <input type="checkbox" name="manageae2" value="yes" checked="checked"> Auto Pull/Sync?
+            </form></span>
+            
+
+
+            
+			</div>
+		</div>
+		
+		<div class="background TESTING">
+		</div>
+		<div class="center_block TESTING">
+			<div class="" style="float:left;width:75%;margin-bottom:200px;">
+            <center><h4 style="margin-top:0em;">Testing Configuration & Status</h4></center>   
+            
+            <center>
+            <form name="myform" action="http://www.mydomain.com/myformhandler.cgi" method="POST">
+            <select name="mydropdown">
+            <option value="address1">Suite name</option>
+            <option value="address2">Suite name 2</option>
+            <option value="address3">Suite name 3</option>
+            </select>
+            <button type="button">Start/Restart Suite</button>
+            <button type="button">Complete Step and Pause</button>
+            <button type="button">Stop Testing</button>
+            
+            </form>
+            </center>
+            
+            <center><h4 style="margin-top:1em;">Testing Output</h4></center>   
+            
+                <div class="table center">
+  <div class="header">
+    <div class="cell" style="width: 100px;">Date Time</div>
+    <div class="cell">Conditions</div>
+    <div class="cell">Arguments</div>
+    <div class="cell">Step</div>
+    <div class="cell">Duration</div>
+    <div class="cell">Results</div>
+    
+  </div>
+  <div class="rowGroup">
+
+
+  
+    
+    <div class="row" style="height:2px;"><!--This is the white seperator between entries--></div>
+    <div class="row FAIL">    
+        
+        <div class="cell">28 Apr 03:04</div>
+        <div class="cell"><div style="width: 200px; max-width: 200px; word-wrap: break-word;">fldc_system/fltr_network/cache_network_failures_single_node.py : Single node total cache network failure - transient - high IO with evictions - no cluster reset.</div> </div>
+        <div class="cell"><div style="width: 200px; max-width: 200px; word-wrap: break-word;"> do_cluster_reset:False,manager_replacement:False,evictions:True,archive_configs:true,IO_pattern:high,clean_log:true,transient:True,testrail:false,timeout:0,subunit:true,disable_enable_iterations:4</div> </div>
+        <div class="cell">5</div>
+        <div class="cell">29:49</div>
+        <div class="cell">FAIL</div>
+        
+        </div>
+
+        <div class="row" style="height:2px;"><!--This is the white seperator between entries--></div>
+    <div class="row PASS">    
+        
+        <div class="cell">28 Apr 03:04</div>
+        <div class="cell"><div style="width: 200px; max-width: 200px; word-wrap: break-word;">fldc_system/fltr_network/cache_network_failures_single_node.py : Single node total cache network failure - high IO with evictions - no cluster reset.</div> </div>
+        <div class="cell"><div style="width: 200px; max-width: 200px; word-wrap: break-word;"> do_cluster_reset:False,evictions:True,archive_configs:true,IO_pattern:high,clean_log:true,transient:False,testrail:false,timeout:0,subunit:true,disable_enable_iterations:1</div> </div>
+        <div class="cell">4</div>
+        <div class="cell">35:54</div>
+        <div class="cell">PASS</div>
+        
+        </div>
+        
+        <div class="row" style="height:2px;"><!--This is the white seperator between entries--></div>
+    <div class="row PASS">    
+        
+        <div class="cell">28 Apr 03:04</div>
+        <div class="cell"><div style="width: 200px; max-width: 200px; word-wrap: break-word;">fldc_system/fltr_network/cache_network_failures_single_node.py : Single node total cache network failure - high IO with evictions - no cluster reset.</div> </div>
+        <div class="cell"><div style="width: 200px; max-width: 200px; word-wrap: break-word;"> do_cluster_reset:False,evictions:True,archive_configs:true,IO_pattern:high,clean_log:true,transient:False,testrail:false,timeout:0,subunit:true,disable_enable_iterations:1</div> </div>
+        <div class="cell">3</div>
+        <div class="cell">34:58</div>
+        <div class="cell">PASS</div>
+        
+        </div>    
+
+    <div class="row" style="height:2px;"><!--This is the white seperator between entries--></div>
+    <div class="row PASS">    
+        
+        <div class="cell">28 Apr 03:04</div>
+        <div class="cell"><div style="width: 200px; max-width: 200px; word-wrap: break-word;">fldc_system/fltr_network/cache_network_failures_all_nodes.py : Cache network total failure all nodes - high IO with evictions - cluster reset.</div> </div>
+        <div class="cell"><div style="width: 200px; max-width: 200px; word-wrap: break-word;"> do_cluster_reset:True,archive_configs:true,clean_log:true,testrail:false,timeout:0,subunit:true</div> </div>
+        <div class="cell">2</div>
+        <div class="cell">1:01:37</div>
+        <div class="cell">PASS</div>
+        
+        </div>
+
+    <div class="row" style="height:2px;"><!--This is the white seperator between entries--></div>
+    <div class="row PASS">    
+        
+        <div class="cell">28 Apr 03:04</div>
+        <div class="cell"><div style="width: 200px; max-width: 200px; word-wrap: break-word;">sprint_0/install_san.py : install SAN - HRM3</div> </div>
+        <div class="cell"><div style="width: 200px; max-width: 200px; word-wrap: break-word;"> archive_configs:true,clean_log:true,testrail:false,timeout:2700,subunit:true</div> </div>
+        <div class="cell">1</div>
+        <div class="cell">06:07</div>
+        <div class="cell">PASS</div>
+        
+        </div>
+    </div>
+    </div>
+        
+            
+            <div style="width:75%;max-height:100px;position:fixed;bottom:0;"><textarea style = "margin: 0px; height: 75px;">Imaginary message received from Bamboo (JVM)
+Imaginary message sent to AE2 (REST)
+Imaginary message received from AE2 (REST)
+Imaginary message sent to CATTLE (REST)
+Imaginary message sent to COWPLOP (REST)
+Imaginary message received from AE2 (REST) Testing Ended
+Imaginary message sent to CATTLE (REST)
+Imaginary logs synced to COWPLOP (REST)
+Imaginary message to Bamboo (JVM) Testing Ended</textarea></div>
+            
+			</div>
+
+		</div>
+        <div class="background CLUSTER">
+		</div>
+		<div class="right_block CLUSTER">
+			<div>
+            <center><h4 style="margin-top:0em;">Cluster Status</h4></center>
+            <div style="margin-left:.5em;margin-bottom:.5em;margin-top:.5em;"><span style="float:left;"><div class="circle" style="background-color:red;margin-top:0px;width:20px;height:20px;"></div></span>&nbsp;<span>QAVM56</span>&nbsp;<span><b>RHEL65</b></span></div>
+            <div style="margin-left:.5em;margin-bottom:.5em;margin-top:0em;"><span style="float:left;"><div class="circle" style="background-color:yellow;margin-top:0px;width:20px;height:20px;"></div></span>&nbsp;<span>QAVM55</span>&nbsp;<span><b>RHEL65</b></span></div>
+            <div style="margin-left:.5em;margin-bottom:.5em;margin-top:0em;"><span style="float:left;"><div class="circle" style="background-color:green;margin-top:0px;width:20px;height:20px;"></div></span>&nbsp;<span>QAVM54</span>&nbsp;<span><b>RHEL65</b></span></div>
+            
+            <center><h4 style="margin-top:0em;">Cluster Management</h4></center>
+            <center>
+            <button type="button">Clean Cluster</button>
+            <br>
+            <button type="button">Kickstart Cluster</button>
+            <br>
+            <button type="button">Change Cluster</button>
+            </center>
+
+            </div>
+                        <br><br>
+            <div>
+            <center><h4 style="margin-top:0em;">Fluid Cache Status</h4></center>
+            <div style="margin-left:.5em;margin-bottom:.5em;margin-top:.5em;"><span style="float:left;"><div class="circle" style="background-color:red;margin-top:0px;width:20px;height:20px;"></div></span>&nbsp;<span>QAVM56</span>&nbsp;<span><b>OFFLINE</b></span></div>
+            <div style="margin-left:.5em;margin-bottom:.5em;margin-top:0em;"><span style="float:left;"><div class="circle" style="background-color:green;margin-top:0px;width:20px;height:20px;"></div></span>&nbsp;<span>QAVM55</span>&nbsp;<span><b>SLAVE</b></span></div>
+            <div style="margin-left:.5em;margin-bottom:.5em;margin-top:0em;"><span style="float:left;"><div class="circle" style="background-color:green;margin-top:0px;width:20px;height:20px;"></div></span>&nbsp;<span>QAVM54</span>&nbsp;<span><b>MASTER</b></span></div>
+
+            <center><h4 style="margin-top:0em;">Fluid Cache Management</h4></center>
+            <center>
+            <span><form style="display:inline;">
+                Branch:<select name="fldc_branch">
+                        <option value="trunk">Trunk</option>
+                        <option value="HERMES_2_0_X">HERMES_2_0_X</option>
+                        </select>
+                        <br>
+                Revision:<select name="fldc_revision">
+                        <option value="head">HEAD</option>
+                        <option value="1234">1234</option>
+                        </select>
+                        <br>
+                OS:<select name="fldc_os">
+                        <option value="RHEL65">RHEL65</option>
+                        <option value="RHEL65PROD">RHEL65 Production</option>
+                        <option value="RHEL64">RHEL64</option>
+                        <option value="RHEL64PROD">RHEL64 Production</option>
+                        <option value="RHEL7">RHEL7</option>
+                        <option value="RHEL7PROD">RHEL7 Production</option>
+                        <option value="SLES">SLES</option>
+                        <option value="SLESPROD">SLES Production</option>
+                        <option value="VMWARE">VMWARE</option>
+                        <option value="VMWAREPROD">VMWARE Production</option>
+                        <option value="WINDOWS">Windows</option>
+                        <option value="WINDOWSPROD">Windows Production</option>
+                        </select>
+                <input type="submit" value ="Change" alt="Changes the version of fluid-cache installed.">
+            </form></span>
+            <br><br>
+            <button type="button">Install Fluid Cache</button>
+            <br>
+            <button type="button">Uninstall Fluid Cache</button>
+            <br>
+            <form>
+                <input type="submit" value ="Upload/Replace Binaries" alt="Replaces binaries.">
+            </form>
+            </center>
+
+            </div>
+            
+            
+		</div>
+	</div>
+
+</body>
+</html>

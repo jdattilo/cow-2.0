@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>YAML parser for JavaScript - JS-YAML</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link rel="stylesheet" href="/static/css/codemirror.css">
+    <link rel="stylesheet" href="/static/css/codemirror.default.css">
+    <link rel="stylesheet" href="/static/css/yamlview.css">
+    <script src="/static/js/es5-shim.js"></script>
+    <script src="/static/js/esprima.js"></script>
+    <script src="/static/js/js-yaml.js"></script>
+    <script src="/static/js/codemirror.js"></script>
+    <script src="/static/js/codemirror/yaml.js"></script>
+    <script src="/static/js/codemirror/javascript.js"></script>
+    <script src="/static/js/hasher.min.js"></script>
+    <script src="/static/js/utils.js"></script>
+    <script src="/static/js/base64.js"></script>
+    <script src="/static/js/json3.js"></script>
+    <script src="/static/js/demo.js"></script>
+    <style> textarea { width: 100%; border: 1px solid #333; padding: 4px; height: 75vh;}</style>
+  </head>
+  <body onLoad="runDemo();">
+
+
+
+
+<div style="padding:1em;">
+<form action="" method="post">
+    {% csrf_token %}
+    <div class='src'>
+  <h5>Edit source here (YAML):</h5>
+  <textarea id = "output" name = "output" style="padding-right: 10px;">{{read_data}}</textarea>
+
+</div>
+<div class='dst'>
+  <h5>Result (JS object dump):</h5>
+  <textarea id="result"></textarea>
+</div>
+    
+    <br>
+    <input type="submit" style = "margin-top:1em;" value="Save Changes" /> <a href="/"><input type="button" style = "margin-top:1em;" value="Cancel" /></a>
+</form>
+</div>
+
+</body>
+</html>
+

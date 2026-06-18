@@ -1,0 +1,20 @@
+{
+  "number": {{runInfo.buildnumber}},
+  "properties": [
+    [
+      "got_revision",
+      "{{runInfo.commit}}"
+    ]
+  ],
+  "state": "{% if runInfo.running %}building{% elif runInfo.needs_triage %}offline{% else %}idle{% endif %}",
+  "sourceStamps": [
+    {
+      "branch": "{{runInfo.branch}}",
+      "revision": "{{runInfo.commit}}"
+    }
+  ],
+  "times": [
+    {{timing.start}},
+    {% if timing.end %}{{timing.end}}{% else %}null{% endif %}
+  ]
+}

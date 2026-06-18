@@ -1,0 +1,954 @@
+{% load staticfiles %}
+{% load views_extras %}
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head profile="http://gmpg.org/xfn/11">
+
+	<title>COW AGENT {{cowstatus.host}}</title>
+
+	<!-- Meta Tags -->
+	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+	
+    <!-- Favicon Status -->
+    
+    <link rel="icon" 
+      type="image/png"
+      href="static/images/{% if runInfo.0.running%}favicon-yellow.png{% elif runInfo.last.suite == "NA" %}favicon.png{% elif runInfo.passed == 0 and runInfo.last.needs_triage == 1 %}favicon-red.png{% elif runInfo.passed == 0 and runInfo.last.needs_triage == 0 %}favicon-red-standing.png{% else %}favicon-green.png{% endif %}">
+    
+    
+	<!-- JavaScript -->
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+	<script type="text/javascript" src="{% static "js/prototype.js"%}"></script>
+	<script type="text/javascript" src="{% static "js/effects.js"%}"></script>
+	<script type="text/javascript" src="{% static "js/accordion.js"%}"></script>
+    <script src="{% static "js/jquery.bpopup.min.js"%}"></script>
+    
+	<!-- CSS -->
+
+    <link rel="stylesheet" type="text/css" href="{% static "css/default.css"%}" />
+    <link rel="stylesheet" type="text/css" href="{% static "css/accordion.css"%}" />
+    <link rel="stylesheet" type="text/css" href="{% static "css/teststyles.css"%}" />
+    <link rel="stylesheet" type="text/css" href="{% static "css/top-menu.css"%}" />
+    <style>
+    .circle {
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;    
+        /* width and height can be anything, as long as they're equal */
+        border: 2px solid #FFF;
+    }
+
+    .center {
+      margin-left: auto;
+      margin-right: auto;
+    }
+    
+    #iframe.b-iframe {
+    #  height: 35em;
+    #  width: 50em;
+    #  }
+    </style>
+    
+</head>
+
+<body>
+
+<div style="left: 275.5px; position: absolute; top: 1950px; z-index: 9999; opacity: 1; display: block; height: auto; display:none;" id="load_pop_up">
+        <span class="button b-close"><span>X</span></span>
+        <div style="height: auto; width: auto; background-color:white;" class="content" style="vertical-align:middle;"><center><img style = "margin-top:50%;" src="/static/images/pleasewait.gif"></center></div>
+</div>
+
+        <!--Main Menu-->
+        
+        <div id='cssmenu'>
+<ul>
+      <li class='has-sub'><a href='/'>COW</a>
+   <ul>
+         <li><a href="/">COW Dashboard</a></li>
+         <li><a href="/activities" target = "_EMPTY">COW Activity Logs</a></li>
+         <li><a href="/runs" target = "_EMPTY">COW Run Logs</a></li>
+      </ul>
+   </li>
+   <li class='has-sub'><a href=''>Logs</a>
+      <ul>
+         <li><a href="/logview/stdio.log/{{runInfo.last.buildnumber}}" target = "_EMPTY">STDIO</a></li>
+         <li><a href="/logview/cow-ae-run.log/{{runInfo.last.buildnumber}}" target = "_EMPTY">AE2</a></li>
+         <li><a href="/logview/cow-ae-run_debug.log/{{runInfo.last.buildnumber}}" target = "_EMPTY">AE2 DEBUG</a></li>
+      </ul>
+   </li>
+  <li class='has-sub'><a href='http://cattle.yourdomain.com' target='_blank'>CATTLE</a>
+      <ul>
+         <li><a href='http://cattle.yourdomain.com/runs/builder/{{cowstatus.host}}/' target='_blank'>Build List</a></li>
+         <li><a href='http://cattle.yourdomain.com' target='_blank'>Report List</a></li>
+      </ul>
+   </li>
+   <li class='has-sub'><a href='http://cowtracks.yourdomain.com' target='_blank'>Cowtracks</a>
+      <ul>
+         <li><a href='http://cowtracks.yourdomain.com/view/{{cowstatus.host}}/{{runInfo.last.buildnumber}}/' target='_blank'>Current Build</a></li>
+         <li><a href='http://cowtracks.yourdomain.com/view/{{cowstatus.host}}/' target='_blank'>Build List</a></li>
+         <li><a href='http://cowtracks.yourdomain.com' target='_blank'>Cow List</a></li>
+      </ul>
+   </li>
+   <li><a href='http://confluence.pdc.dell.com/display/SQA/COW+Help+Directory' target='_blank'>COW Help</a></li>
+   <li><a href='http://jira.yourdomain.com/browse/AUTO-1378' target='_blank'>report a bug/request a feature</a></li>
+   <li class='has-sub'><a href=''>Other Tools</a>
+      <ul>
+         <li><a href='http://cattle.yourdomain.com' target='_blank'>CATTLE</a></li>
+         <li><a href='http://cowtracks.yourdomain.com' target='_blank'>COWTRACKS</a></li>
+         <li><a href='http://b2eb.yourdomain.com' target='_blank'>B2EB (STAT2)</a></li>
+      </ul>
+   </li>
+   <li>
+   {% if request.user.is_authenticated %}
+    <a href="/accounts/logout/">Welcome, {{ request.user.get_username }}. Thanks for logging in. (LOGOUT)</a>
+{% else %}
+    <a href="/accounts/login/?next=/">PLEASE LOGIN.</a>
+{% endif %}
+   </li>
+</ul>
+</div>
+
+<div id="container">
+    <h1><span>COW AGENT ON {{cowstatus.host}}</span> At: {{cowstatus.revision}} Vs. Head:{{cowstatus.head}} <button type="button" id="update_cow" name "update_cow" {% if request.user.is_authenticated == False or runInfo.0.running or "M" in cowstatus.revision or cowstatus.revision == cowstatus.head %}disabled{% endif %}>Update</button></h1>
+    <div style = "color:#000;">Running as {%if cowstatus.dev%} Dev Server {% else %} WSGI module {% endif %} from {{cowstatus.root}}. Crontab for COW is {{cowstatus.crontab | safe}}
+	<br>Last Queuemaster update at {{AE2Settings.lastqueuecheck}}
+    {% if AE2Settings.automated_os%}<br><span><h2>{% if automated_os != "Unset"%}Configured for {{AE2Settings.automated_os}}:{% endif %}{% if AE2Settings.automated_compiler != "Unset" %} <a href = "http://buildbot3.yourdomain.com:8080/buildslaves/{{AE2Settings.automated_compiler}}/">Buildbot Compiler {{AE2Settings.automated_compiler}}</a>{% endif %}{% if AE2Settings.automated_scheduler != "Unset" %} - <a href = "http://buildbot3.yourdomain.com:8080/builders/{{AE2Settings.automated_scheduler}}/">Buildbot Scheduler {{AE2Settings.automated_scheduler}}</a>{% endif %}</h2></span>{% endif %}
+    </div>
+    <div style = "color:#FFF;">
+    <div id="vertical_container" >
+
+        <span style = "float:right;padding-right:2em;padding-top:.2em;">
+            {% if AE2Settings.cow_mode == 2 %}Grazing Mode(AUTOMATION & COW DISABLED){% elif AE2Settings.cow_mode == 1 %}Hand Milked (AUTOMATION DISABLED){% elif AE2Settings.present %}Available{% else %}Unavailable{% endif %}<div class="circle center" style="background-color:{% if AE2Settings.cow_mode == 2 %}gray{% elif AE2Settings.present %}green{% else %}OrangeRed{% endif %};"></div>
+        </span>
+        <h1 class="accordion_toggle">AE2/Automation Management</h1> 
+		<div class="accordion_content">   
+          <p>
+          
+          <span><form style="display:inline;" name = "ae2directory">
+                AE2 directory:<input type="text" id = "ae2directory" name="ae2directory" size="25" value="{{AE2Settings.install_directory}}">
+                </form><button type="button" id="my-ae2-change-button" {% if runInfo.0.running or request.user.is_authenticated == False or AE2Settings.cow_mode == 2%}disabled{% endif %}>Change/Refresh</button></span>
+            <span><form style="display:inline;" name = "ae2pullinfo">
+                Branch:<select id="ae2branch" name="ae2branch">
+                        <option value="https://sqa.yourdomain.com/tools/AwesomeExpress/trunk/" {% if AE2Settings.branch = "https://sqa.yourdomain.com/tools/AwesomeExpress/trunk/" %}selected{% endif %}>Trunk</option>
+                        <option value="https://sqa.yourdomain.com/tools/AwesomeExpress/branches/ae2/" {% if AE2Settings.branch = "https://sqa.yourdomain.com/tools/AwesomeExpress/branches/ae2/" %}selected{% endif %}>AE2</option>
+                        <option value="https://sqa.yourdomain.com/tools/AwesomeExpress/branches/butterjunk/" {% if AE2Settings.branch = "https://sqa.yourdomain.com/tools/AwesomeExpress/branches/butterjunk/" %}selected{% endif %}>Butterjunk</option>
+                        <option value="https://sqa.yourdomain.com/tools/AwesomeExpress/branches/ae2_without_generic_san/" {% if AE2Settings.branch = "https://sqa.yourdomain.com/tools/AwesomeExpress/branches/ae2_without_generic_san/" %}selected{% endif %}>AE2 W/O Generic San</option>
+                        <option value="https://sqa.yourdomain.com/tools/AwesomeExpress/branches/bicyclops/" {% if AE2Settings.branch = "https://sqa.yourdomain.com/tools/AwesomeExpress/branches/bicyclops/" %}selected{% endif %}>Bicyclops</option>
+                        {% for aebranch in myaebranches %}
+                        <option value="{{aebranch.location}}" {% if AE2Settings.branch = "{{aebranch.location}}" %}selected{% endif %}>{{aebranch.name}}</option>
+                        {% endfor %}
+                        </select>
+                Revision:<select id="ae2revision" name="ae2revision">
+                        <option value="-1" {% if AE2Settings.revision = -1 %}selected{% endif %}>HEAD</option>
+                        </select>
+            </form><button type="button" id="my-ae2-pull-button" {% if runInfo.0.running or request.user.is_authenticated == False or AE2Settings.cow_mode == 2 %}disabled{% endif %}>Pull AE2</button></span>
+            <span><form style="display:inline;" alt="Should an AE2 Pull and cluster/suite sync be performed automatically?">
+                <!--<input type="checkbox" name="manageae2" value="yes" {% if AE2Settings.autopull %}checked="checked"{% endif %} disabled> Auto Pull/Sync?!-->
+            </form></span>
+          
+          </p>
+          <center>
+          {% if AE2Settings.cow_mode == 0 %}
+          <h4 style="margin-top:0em;">This Cow is in its stall: (AUTOMATION READY)</h4>
+                <div>This cow has been munching happily on grains in its stall. <br>
+                <img src="/static/images/cow_in_stall.jpg" alt="Copyright Kellogg Company (in Australia at least) FYI">
+                <br> It is hooked up and ready for the milking to begin. </div>
+            <br><br>
+         {% elif AE2Settings.cow_mode == 1 %}   
+             <h4 style="margin-top:0em;">This Cow is being milked by hand: (AUTOMATION DISABLED)</h4>
+                <div>This cow is waiting for you to milk it. <br>
+                <img src="/static/images/cow_manual_milking.gif" alt="Milk away">
+                <br> There is a stool and bucket ready for you. 
+                <br>({{AE2Settings.mode_username}} put it all there for you on {{AE2Settings.mode_dtg}}) </div>
+            <br><br>
+         {% else %}
+             <h4 style="margin-top:0em;">This Cow is grazing: (COW & AUTOMATION DISABLED)</h4>
+                <div>This cow is out to pasture. <br>
+                <img src="/static/images/cow_in_pasture.gif" alt="Milk away">
+                <br> It is grazing happily so you can clean it's stall. 
+                <br>({{AE2Settings.mode_username}} let this cow out of the barn on {{AE2Settings.mode_dtg}}) </div>
+            <br><br>
+        {% endif %}
+            {{cowmodeform}}
+            <div><form style="display:inline;" name = "ae2automation_settings">
+                
+            </form><button type="button" id="my-state-settings-button" {% if runInfo.0.running or request.user.is_authenticated == False %}disabled{% endif %} >Change this COWs mode of operation.</button> {% if request.user.is_authenticated == False %}PLEASE LOGIN{% endif %}</div>
+            </center>
+            <br><br>
+            
+            
+          
+        <center><h4 style="margin-top:0em;">Automated testing configuration (used when triggered by BuildBot)</h4>
+            <span><form style="display:inline;" name = "ae2automation_settings">
+                <span>Automated Tester Name:*<input id="tester_name_auto" name="tester_name_auto" value="{{AE2Settings.automated_name}}"></span>
+                
+                
+                Env:*<select id="ae2env_auto" name="ae2env_auto" style = "margin-bottom: .25em;">
+                    <option value="{{env.location}}" {% if "Unset" == AE2Settings.automated_env%}selected{% endif %}>Unset</option>
+                    {% for env in AE2Environments.all %}
+                    <option value="{{env.location}}" {% if env.location == AE2Settings.automated_env%}selected{% endif %}>{{env.name}}</option>
+                    {% endfor %}
+                    </select>
+                Suite:*<select id="ae2suite_auto" name="ae2suite_auto" style = "margin-bottom: .25em;">
+                    <option value="{{suite.location}}"{% if "Unset" == AE2Settings.automated_suite%}selected{% endif %}>Unset</option>
+                    {% for suite in AE2Suites.all %}
+                    <option value="{{suite.location}}"{% if suite.location == AE2Settings.automated_suite%}selected{% endif %}>{{suite.name}}</option>
+                    {% endfor %}
+                    </select>
+                    <br>
+                    <span>Tester Description:*<textarea id="tester_description_auto" name="tester_description_auto" value="">{{AE2Settings.automated_description}}</textarea>
+                OS:<select id="os_auto" name="os_auto" style = "margin-bottom: .25em;">
+                    {% for myos in AE2Settings.AUTO_OS_CHOICES %}
+                    <option value="{{myos.0}}"{% if myos.0 == AE2Settings.automated_os%}selected{% endif %}>{{myos.1}}</option>
+                    {% endfor %}
+                    </select></span>
+                    <span>BBot Compiler:<input id="compiler_auto" name="compiler_auto" value="{{AE2Settings.automated_compiler}}"></span>
+                    <span>BBot Scheduler:<input id="scheduler_auto" name="scheduler_auto" value="{{AE2Settings.automated_scheduler}}"></span>
+            </form><button type="button" id="my-automation-settings-button" {% if runInfo.0.running or request.user.is_authenticated == False or AE2Settings.cow_mode == 2 %}disabled{% endif %} >Change Automated Testing Settings</button> {% if request.user.is_authenticated == False %}PLEASE LOGIN{% endif %}</span>
+            
+            <br><br>
+            
+            
+            </center>
+          
+        </div>
+        {% if AE2Settings.cow_mode != 2 %}
+        <span style = "float:right;padding-right:2em;padding-top:.2em;">
+           {% if ClusterHealthObject.empty %}EMPTY CLUSTER{% elif ClusterHealthObject.ping == 0 %}Ping Issue{% elif ClusterHealthObject.ssh == 0 and ClusterHealthObject.rpc == 0 %}SSH/RPC Issue{% else %}Healthy{% endif %}<div class="circle center" style="background-color:{% if ClusterHealthObject.empty %}gray{% elif ClusterHealthObject.ping == 0 %}OrangeRed{% elif ClusterHealthObject.ssh == 0 and ClusterHealthObject.rpc == 0 %}yellow{% else %}green{% endif %};"></div>
+        </span>
+        
+        <h1 class="accordion_toggle">Cluster Monitoring</h1>
+		<div class="accordion_content">
+            <p>
+				
+            <h4 style="margin-top:0em;">Cluster Status</h4></center>
+            
+            {% for sut in myClusterMembers.all %}
+
+            
+            <div ><span style="float:left;clear:left;"><div class="circle" style="background-color:{% if sut.ping == 0 %}OrangeRed{% elif sut.ssh == 0 and sut.rpc == 0%}yellow{% else %}green{% endif %}
+            ;width:60px;height:60px;">
+            <div style="margin-top:15px;" class="center"><center>{% if sut.ping == 0 %}ping<br>down{% elif sut.ssh == 0 and sut.rpc == 0%}ssh/rpc<br>down{% else %}up{% endif %}</center></div>
+            </div>
+            </span>&nbsp;<div style="margin-top:10px;margin-bottom:27px;"><a href = "http://{{sut.hostname}}:8080" target = "_EMPTY">{{sut.hostname}}</a>&nbsp;<b>{{sut.os}}</b></div>
+            </div>
+            
+            {% endfor %}
+            
+            
+            <center><h4 style="margin-top:0em;">Cluster Assignment</h4>
+            <span><form style="display:inline;" name = "ae2env_selector">
+                Env:<select id="ae2env_1" name="ae2env_1" style = "margin-bottom: .25em;">
+                    {% for env in AE2Environments.all %}
+                    <option value="{{env.location}}" {% if env.location == runInfo.last.env%}selected{% endif %}>{{env.name}}</option>
+                    {% endfor %}
+                    </select>
+            </form><button type="button" id="my-env-change-button" {% if runInfo.0.running or runInfo.last.needs_triage or request.user.is_authenticated == False %}disabled{% endif %} >Change & Load ENV</button> {% if request.user.is_authenticated == False %}PLEASE LOGIN{% endif %}</span>
+            
+            
+            
+            
+            </center>
+            
+            <br><br>
+            
+            <center><h4 style="margin-top:0em;">Cluster Activities</h4></center>
+            <center>
+            <button type="button" name="collect_cluster_button" id="collect_cluster_button" {% if runInfo.0.running or request.user.is_authenticated == False %}disabled{% endif %}>Perform FLDC collect on cluster</button>
+            <br><br>
+            <button type="button" name="clean_cluster_button" id="clean_cluster_button" {% if runInfo.0.running or request.user.is_authenticated == False %}disabled{% endif %}>Clean Cluster</button>
+            </center>
+            
+            </p>
+		</div>
+        
+
+        <span style = "float:right;padding-right:2em;padding-top:.2em;">
+            {% if runInfo.last.needs_triage %}Triage Lock{% elif runInfo.0.running %}Running{% else %}Idle{% endif %}<div class="circle center" style="background-color:{% if runInfo.last.needs_triage %}OrangeRed{% elif runInfo.0.running %}green{% else %}grey{% endif %};"></div>
+        </span>
+        <h1 class="accordion_toggle">Testing Configuration</h1>
+		<div class="accordion_content">
+        	<h2>Select a suite, and run FLDC testing!<button type="button" id="start_buildslave" name = "start_buildslave" style="float:right;margin-left:.5em;" {% if runInfo.0.running or request.user.is_authenticated == False %}disabled{% endif %}>Start Buildslave</button><button type="button" id="stop_buildslave" name = "stop_buildslave" style="float:right;" {% if runInfo.0.running or request.user.is_authenticated == False %}disabled{% endif %}>Stop Buildslave</button></h2>
+            {% if runInfo.last.needs_triage %}
+            <p>
+            
+            <center>
+              
+              <div style="background-color: salmon;width: 75%;padding-top: 1em;padding-bottom: 1em;">
+              <form style="display:inline;" name="performtriage">
+              <span>Bug:<input id="triagebug" name="triagebug"></span>
+              <span>Comment:<textarea id="triagecomment" name="triagecomment" value=""></textarea></span>
+              {{myform}}
+              <br><br>
+              1.<button type="button" name="collect_cluster_button2" id="collect_cluster_button2" {% if runInfo.0.running or request.user.is_authenticated == False %}disabled{% endif %}>Perform FLDC collect on cluster</button>
+              2.<button type="button" name="clean_cluster_button2" id="clean_cluster_button2" {% if runInfo.0.running or request.user.is_authenticated == False %}disabled{% endif %}>Clean Cluster</button>
+              3.<button type="button" id="mark_triage" name "mark_triage" {% if runInfo.0.running or request.user.is_authenticated == False %}disabled{% endif %}>Mark Triage Complete</button> <input type="checkbox" name="start_buildslave_cb" id="start_buildslave_cb" value="start" {% if AE2Settings.cow_mode == 0 %}checked{% endif %} {% if AE2Settings.cow_mode == 1 %}disabled{% endif %}> Restart Buildslave
+            </form></div>
+            </center>
+            </p>
+            {% endif %}
+
+            <p>
+         		<span><form style="display:inline;" name = "ae2runinfo">
+                Suite:<select id="ae2suite" name="ae2suite" style = "margin-bottom: .25em;">
+                    {% for suite in AE2Suites.all %}
+                    <option value="{{suite.location}}"{% if runInfo.last.suite in suite.location %}selected{% endif %}>{{suite.name}}</option>
+                    {% endfor %}
+                    </select> <button type="button" id="ae2_suite_edit" {% if request.user.is_authenticated == False %}disabled{% endif %}>Edit Suite</button> <button type="button" id="ae2_suite_new" {% if request.user.is_authenticated == False %}disabled{% endif %}>New Suite</button> <button type="button" id="ae2_suite_copy" {% if request.user.is_authenticated == False %}disabled{% endif %}>Copy Suite</button>
+                <br>
+                Env:<select id="ae2env" name="ae2env" style = "margin-bottom: .25em;">
+                    {% for env in AE2Environments.all %}
+                    <option value="{{env.location}}" {% if runInfo.last.env in env.location %}selected{% endif %}>{{env.name}}</option>
+                    {% endfor %}
+                    </select>
+                    <button type="button" id="ae2_env_edit" {% if request.user.is_authenticated == False %}disabled{% endif %}>Edit Env</button> <button type="button" id="ae2_env_new" {% if request.user.is_authenticated == False %}disabled{% endif %}>New Env</button> <button type="button" id="ae2_env_copy" {% if request.user.is_authenticated == False %}disabled{% endif %}>Copy Env</button>
+                <br>
+                Branch:<input type="text" id= "fldcbranch" name="fldcbranch" value="{{runInfo.last.branch}}" style = "margin-bottom: .25em;">
+                Commit:<input type="number" id= "fldccommit" name="fldccommit" min="0" value="{{runInfo.last.commit}}" style="width:60px;" style = "margin-bottom: .25em;">
+                <br>
+                Tools/Simulator:<input type="text" id= "fldctools" name="fldctools" value="{{runInfo.last.tools}}" style = "margin-bottom: .25em;">
+                RPM/EXE:<input type="text" id= "fldcrpm" name="fldcrpm" value="{{runInfo.last.rpm}}" style = "margin-bottom: .25em;">
+            </form><button type="button" id="my-ae2-run-button" {% if runInfo.0.running or runInfo.last.needs_triage or request.user.is_authenticated == False %}disabled{% endif %} >Run AE2</button> <input type="checkbox" name="ae2mute" id="ae2mute" value="ae2muted" {% if runInfo.last.muted %}checked{% endif %} {% if runInfo.0.running or runInfo.last.needs_triage or request.user.is_authenticated == False %}disabled{% endif %}> Disable CATTLE reporting {% if request.user.is_authenticated == False %}--PLEASE LOGIN--{% endif %}</span>
+            </p>
+		</div>
+        
+        <span style = "float:right;padding-right:2em;padding-top:.2em;">
+            {% if runInfo.0.running%}Running{% elif runInfo.0.suite == "NA" %}No Runs{% elif runInfo.0.passed == 0 %}FAIL{% else %}PASS{% endif %}<div class="circle center" style="background-color:{% if runInfo.0.running%}yellow{% elif runInfo.0.suite == "NA" %}gray{% elif runInfo.0.passed == 0 %}OrangeRed{% else %}green{% endif %};"></div>
+        </span>
+        <h1 class="accordion_toggle">Monitor Testing</h1>
+		<div class="accordion_content">
+        	<h2>See what's happening in your current test run.<button type="button" name="halt_run_button" id="halt_run_button" style="float:right;margin-right:1em;" {% if runInfo.0.running == False%}disabled{% endif %}>Terminate Current Run</button></h2>
+            <center>
+            
+            </center>
+            <br>
+            <p>
+            {% for runobject in runobjects.all %}
+                <div class="table" style = "width:100%;">
+                  <div class="header">
+                    <div class="cell" style = "width: 100px;">Date Time</div>
+                    <div class="cell" style = "width:250px;">Build Info</div>
+                    <div class="cell">Branch</div>
+                    <div class="cell">Duration</div>
+                    <div class="cell">Results</div>
+                    <!--<div class="cell" style = "width:200px;">Caused Bug</div>
+                    <div class="cell" style = "width:150px;">Comment</div>
+                    <div class="cell">History?</div>-->
+                    
+                  </div>
+                  <div class="rowGroup">    
+                    <div class="row" style="height:2px;"><!--This is the white seperator between entries--></div>
+                    <div class="row {{ runobject.run_results|translate_PF_class }}">    
+                        {# Each "run" is a run model object. #}
+                        <div class = "cell">{{runobject.end_time|date:"d M H:m"}}</div>
+                        <div class = "cell">
+                            {{runobject.operating_system}} on <a href="http://cattle.yourdomain.com/runs/builder/{{runobject.builder|address_tail}}/" target="_EMPTY">{{runobject.builder|address_tail}}</a>
+                            <br>Build: <a href = "http://cattle.yourdomain.com/tests/run/{{runobject.last.build_number}}/" target = "_EMPTY">{{runobject.last.build_number}}</a> Commit <a href="http://fisheye.yourdomain.com/changelog/RNA?cs={{runobjects.last.commit}}">{{runobjects.last.commit}}</a> 
+                            <br>STE: {{runobject.suite_file|suite_link}}
+                            <br>ENV: {{runobject.env_file|env_link}}
+                        </div>
+                        <div class = "cell">{{ runobject.parent_branch }}</div>
+                        <div class = "cell">{% if "00:00" == runobject.end_time|subtractdate:runobject.start_time|format_time %}{{ runobject.end_time| subtractnow |format_time }}{% else %}{{ runobject.end_time|subtractdate:runobject.start_time|format_time }}{% endif %}</div>
+                        <div class = "cell">
+                            <a href="http://cattle.yourdomain.com/tests/run/{{runobject.pk}}/" title = "View tests in run {{runobject.pk}}">Tests</a>
+                            <br>{{ runobject.run_results|translate_PF }}
+                        </div>
+                        <!--<div class = "cell">{{ runobject.caused_bug|jira_pull|safe }}</div>
+                        <div class = "cell">{{ runobject.comment|linebreaks }}</div>
+                        <div class = "cell"><button class = "alignright" id="my-edit-button-{{runobject.pk}}">Edit</button>{% if runobject.history.all.count > 1 %} <button class = "alignright" id="my-history-button-{{runobject.pk}}">Hist</button> {% endif %}
+                       
+                        
+                        
+                        </div> -->
+                    </div>
+
+                  </div>
+                </div>
+                
+                
+                
+                
+                
+                
+                
+                <div class="table" style = "width:95%;float:right;">
+                  <div class="header">
+                    <div class="cell" style = "width: 100px;">Date Time</div>
+                    <!--<div class="cell">Run</div>-->
+                    <div class="cell">Conditions</div>
+                    <!--<div class="cell">Arguments</div>-->
+                    <div class="cell">Step</div>
+                    <div class="cell">Duration</div>
+                    <div class="cell">Results</div>
+                    <!--<div class="cell" style = "width:275px;">Caused Bug</div>
+                    <div class="cell" style = "width:150px;">Comment</div>
+                    <div class="cell">History?</div>-->
+                    
+                  </div>
+                  <div class="rowGroup">    
+                    {% for test in testgroup %}
+                    {% if test.parentrun == runobject %}
+                    <div class="row" style="height:2px;"><!--This is the white seperator between entries--></div>
+                    <div class="row {{ test.test_results|translate_PF_class }}">    
+                        {# Each "test" is a Test model object. #}
+                        <div class = "cell">{{test.parentrun.end_time|date:"d M H:m"}}</div>
+                        <!--<div class = "cell"><a href = "/runs/id/{{test.parentrun.pk}}/">{{test.parentrun.pk}}</a> -> <a href="/tests/run/{{test.parentrun.pk}}/">Tests</a></div>-->
+                        <div class = "cell"><div style = "word-wrap: break-word;">{{ test.test_conditions }}</div> </div>
+                        <!--<div class = "cell"><div style = "width: 200px; max-width: 200px; word-wrap: break-word;"> {{ test.test_args }}</div> </div>-->
+                        <div class = "cell">{{ test.test_sequence_number }}</div>
+                        <div class = "cell">{{ test.test_duration|format_time }}</div>
+                        <div class = "cell">{{ test.test_results|translate_PF }}</div>
+                        <!--<div class = "cell">{{ test.caused_bug|jira_pull|safe }}</div>
+                        <div class = "cell">{{ test.comment|linebreaks }}</div>
+                        <div class = "cell"><button class = "alignright" id="my-edit-button-{{test.pk}}">Edit</button>{% if test.history.all.count > 1 %} <button class = "alignright" id="my-history-button-{{run.pk}}">Hist</button> {% endif %}
+                        
+                        </div>-->
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+
+                  </div>
+                </div>
+                                
+            {% endfor %}
+            </p>
+            <p>
+                <center><h4 style="margin-top:1em;clear:both;">STDIO Output</h4>
+                <a href = "/logview/stdio.log/{{runInfo.last.buildnumber}}" target = "_EMPTY">OPEN FULL STDIO LOG</a><br></center><a href = "/logview/stdio.log/{{runInfo.last.buildnumber}}" target = "_NEW">...</a>   
+                <div>{{stdiolog|linebreaksbr}}</div>
+                <center><h4 style="margin-top:1em;">AE2 Log File</h4>
+                <a href = "/logview/cow-ae-run.log/{{runInfo.last.buildnumber}}" target = "_EMPTY">OPEN FULL AE-RUN LOG</a> or <a href = "/logview/cow-ae-run_debug.log/{{runInfo.last.buildnumber}}" target = "_NEW">OPEN FULL AE-RUN DEBUG LOG</a></center><br><a href = "/logview/cow-ae-run.log/{{runInfo.last.buildnumber}}" target = "_NEW">...</a>   
+                <div>{{ae2log|linebreaksbr}}</div>
+            </p>
+		</div>
+        {% endif %}
+        					
+	</div>
+
+	<div class="page-footer">
+	</div>
+</div>
+	
+	
+</body>
+
+<footer>
+<script type="text/javascript">
+		//
+		//  In my case I want to load them onload, this is how you do it!
+		// 
+		Event.observe(window, 'load', loadAccordions, false);
+		//
+		//	Set up all accordions
+		//
+		function loadAccordions() {
+			var bottomAccordion = new accordion('vertical_container');
+            //This is where we decide which accordion element is opened by default
+			bottomAccordion.activate($$('#vertical_container .accordion_toggle')[{{opentab}}]);
+		}
+</script>
+
+<script type="text/javascript" >
+	var verticalAccordions = $$('.accordion_toggle');
+	verticalAccordions.each(function(accordion) {
+		$(accordion.next(0)).setStyle({
+		  height: '0px'
+		});
+	});
+/*
+    ;(function($) {
+        $(function() {
+            $('#clean_cluster_button').bind('click', function(e) {
+                var envfile = document.getElementById('ae2env').value.split("env_files/")[1]
+            
+                var myresponse = prompt("Please type '"+envfile+"' to confirm this is the cluster you want to clean. WARNING: You are about to uninstall FLDC.");
+                
+                if (myresponse != null) {
+                    if(myresponse != envfile)
+                    {
+                    alert("ERROR:\nYou typed "+myresponse+" when requesting to clean " +envfile+"\nPlease make sure you are trying to clean from the right driver.")
+                    }
+                    else
+                    {
+                        e.preventDefault();
+                        $('#load_pop_up').bPopup({
+                        content:'iframe',
+                        contentContainer:'.content',
+                        loadUrl: '/cluster/cleancluster' //Uses jQuery.load()
+                        });
+                    }
+                }
+               
+            });
+         });
+     })(jQuery);
+     
+     
+     ;(function($) {
+        $(function() {
+            $('#clean_cluster_button2').bind('click', function(e) {
+                var envfile = document.getElementById('ae2env').value.split("env_files/")[1]
+            
+                var myresponse = prompt("Please type '"+envfile+"' to confirm this is the cluster you want to clean. WARNING: You are about to uninstall FLDC." );
+                
+                if (myresponse != null) {
+                    if(myresponse != envfile)
+                    {
+                    alert("ERROR:\nYou typed "+myresponse+" when requesting to clean " +envfile+"\nPlease make sure you are trying to clean from the right driver.")
+                    }
+                    else
+                    {
+                        e.preventDefault();
+                        $('#load_pop_up').bPopup({
+                        content:'iframe',
+                        contentContainer:'.content',
+                        loadUrl: '/cluster/cleancluster' //Uses jQuery.load()
+                        });
+                    }
+                }
+               
+            });
+         });
+     })(jQuery);
+  */   
+     
+     
+     ;(function($) {
+        $(function() {
+            $('#collect_cluster_button').bind('click', function(e) {
+                //var envfile = document.getElementById('ae2env').value.split("env_files/")[1]
+            
+                //var myresponse = prompt("WARNING: This will uninstall FLDC and remove a number of related files for the entire cluster!Only perform this procedure if you have met the following requirements.\n\n1.)You have performed triage if applicable.\n2.)You have ownership/permission to perform this clean.\n3.)Please type '"+envfile+"' and click OK to clean all nodes in "+envfile);
+                
+                //if (myresponse != null) {
+                //    if(myresponse != envfile)
+                //   {
+                //    alert("ERROR:\nYou typed "+myresponse+" when requesting to clean " +envfile+"\nPlease make sure you are trying to clean from the right driver.")
+                //    }
+                //    else
+                //    {
+                        e.preventDefault();
+                        $('#load_pop_up').bPopup({
+                        content:'iframe',
+                        contentContainer:'.content',
+                        loadUrl: '/cluster/collectcluster' //Uses jQuery.load()
+                        });
+                //    }
+                //}
+               
+            });
+         });
+     })(jQuery);
+    
+    ;(function($) {
+        $(function() {
+            $('#collect_cluster_button2').bind('click', function(e) {
+                //var envfile = document.getElementById('ae2env').value.split("env_files/")[1]
+            
+                //var myresponse = prompt("WARNING: This will uninstall FLDC and remove a number of related files for the entire cluster!Only perform this procedure if you have met the following requirements.\n\n1.)You have performed triage if applicable.\n2.)You have ownership/permission to perform this clean.\n3.)Please type '"+envfile+"' and click OK to clean all nodes in "+envfile);
+                
+                //if (myresponse != null) {
+                //    if(myresponse != envfile)
+                //   {
+                //    alert("ERROR:\nYou typed "+myresponse+" when requesting to clean " +envfile+"\nPlease make sure you are trying to clean from the right driver.")
+                //    }
+                //    else
+                //    {
+                        e.preventDefault();
+                        $('#load_pop_up').bPopup({
+                        content:'iframe',
+                        contentContainer:'.content',
+                        loadUrl: '/cluster/collectcluster' //Uses jQuery.load()
+                        });
+                //    }
+                //}
+               
+            });
+         });
+     })(jQuery);
+    
+    
+     ;(function($) {
+        $(function() {
+            $('#clean_cluster_button').bind('click', function(e) {
+                e.preventDefault();
+                $('#load_pop_up').bPopup({
+            content:'iframe',
+            contentContainer:'.content',
+            loadUrl: '/ae2/run?ae2suite=/root/ae2/src/suite_files/users/jdattilo/cow_multi_clean.cfg&ae2env='+document.getElementById('ae2env').value+'&fldcrpm='+document.getElementById('fldcrpm').value+'&fldcbranch='+document.getElementById('fldcbranch').value+'&fldccommit='+document.getElementById('fldccommit').value+'&fldctools='+document.getElementById('fldctools').value+'&fldcmuted=1&cleanup=1' //Uses jQuery.load()
+            });
+            });
+         });
+     })(jQuery);
+     
+     ;(function($) {
+        $(function() {
+            $('#clean_cluster_button2').bind('click', function(e) {
+                e.preventDefault();
+                $('#load_pop_up').bPopup({
+            content:'iframe',
+            contentContainer:'.content',
+            loadUrl: '/ae2/run?ae2suite=/root/ae2/src/suite_files/users/jdattilo/cow_multi_clean.cfg&ae2env='+document.getElementById('ae2env').value+'&fldcrpm='+document.getElementById('fldcrpm').value+'&fldcbranch='+document.getElementById('fldcbranch').value+'&fldccommit='+document.getElementById('fldccommit').value+'&fldctools='+document.getElementById('fldctools').value+'&fldcmuted=1&cleanup=1' //Uses jQuery.load()
+            });
+            });
+         });
+     })(jQuery);
+    
+    ;(function($) {
+        $(function() {
+            $('#update_cow').bind('click', function(e) {
+                            
+                var myresponse = prompt("WARNING: This will shut down and update the cow!\n\nIf that sounds okay, then just type 'yes', click ok, and grab a cup of Joe.");
+                
+                if (myresponse != null) {
+                    if(myresponse != 'yes')
+                   {
+                    alert("ERROR:\nYou typed "+myresponse+", if you want to actually update you should type 'yes'.")
+                    }
+                    else
+                    {
+                        e.preventDefault();
+                        $('#load_pop_up').bPopup({
+                        content:'iframe',
+                        contentContainer:'.content',
+                        loadUrl: '/updatecow' //Uses jQuery.load()
+                        });
+                    }
+                }
+               
+            });
+         });
+     })(jQuery);
+    
+    
+    ;(function($) {
+        $(function() {
+            $('#halt_run_button').bind('click', function(e) {
+                e.preventDefault();
+                $('#load_pop_up').bPopup({
+            content:'iframe',
+            contentContainer:'.content',
+            loadUrl: '/ae2/halt' //Uses jQuery.load()
+            });
+            });
+         });
+     })(jQuery);
+    
+    ;(function($) {
+        $(function() {
+            $('#my-ae2-change-button').bind('click', function(e) {
+                
+                //alert("Info: "+document.getElementById('ae2directory').value);
+                
+                e.preventDefault();
+                $('#load_pop_up').bPopup({
+            content:'iframe',
+            contentContainer:'.content',
+            loadUrl: '/ae2/changedirectory?ae2directory='+document.getElementById('ae2directory').value //Uses jQuery.load()
+            });
+            });
+         });
+     })(jQuery);
+    
+    
+    ;(function($) {
+        $(function() {
+            $('#my-ae2-pull-button').bind('click', function(e) {
+                
+                //alert("Info: "+document.getElementById('ae2directory').value);
+                
+                e.preventDefault();
+                $('#load_pop_up').bPopup({
+            content:'iframe',
+            contentContainer:'.content',
+            loadUrl: '/ae2/pull?ae2directory='+document.getElementById('ae2directory').value+'&ae2branch='+document.getElementById('ae2branch').value+'&ae2revision='+document.getElementById('ae2revision').value //Uses jQuery.load()
+            });
+            });
+         });
+     })(jQuery);
+    
+    ;(function($) {
+        $(function() {
+            $('#my-ae2-run-button').bind('click', function(e) {
+                
+                //alert('/ae2/run?ae2suite='+document.getElementById('ae2suite').value+'&ae2env='+document.getElementById('ae2env').value+'&fldcrpm='+document.getElementById('fldcrpm').value+'&fldcbranch='+document.getElementById('fldcbranch').value+'&fldccommit='+document.getElementById('fldccommit').value+'&fldctools='+document.getElementById('fldctools').value+'&fldcmuted='+document.getElementById('ae2mute').checked);
+                
+                e.preventDefault();
+                $('#load_pop_up').bPopup({
+            content:'iframe',
+            contentContainer:'.content',
+            loadUrl: '/ae2/run?ae2suite='+document.getElementById('ae2suite').value+'&ae2env='+document.getElementById('ae2env').value+'&fldcrpm='+document.getElementById('fldcrpm').value+'&fldcbranch='+document.getElementById('fldcbranch').value+'&fldccommit='+document.getElementById('fldccommit').value+'&fldctools='+document.getElementById('fldctools').value+'&fldcmuted='+document.getElementById('ae2mute').checked //Uses jQuery.load()
+            });
+            });
+         });
+     })(jQuery);
+     
+     ;(function($) {
+        $(function() {
+            $('#my-env-change-button').bind('click', function(e) {
+                
+                //alert("Info: "+document.getElementById('ae2directory').value);
+                
+                e.preventDefault();
+                $('#load_pop_up').bPopup({
+            content:'iframe',
+            contentContainer:'.content',
+            loadUrl: '/ae2/envchange?ae2env='+document.getElementById('ae2env_1').value //Uses jQuery.load()
+            });
+            });
+         });
+     })(jQuery);
+     
+     ;(function($) {
+        $(function() {
+            $('#mark_triage').bind('click', function(e) {
+                
+                //alert("Info: "+document.getElementById('ae2directory').value);
+                
+                e.preventDefault();
+                $('#load_pop_up').bPopup({
+            content:'iframe',
+            contentContainer:'.content',
+            loadUrl: '/ae2/performtriage?bug='+document.getElementById('triagebug').value+'&comment='+document.getElementById('triagecomment').value+"&results="+document.getElementById("id_run_results").value+'&start_buildslave='+document.getElementById('start_buildslave_cb').checked
+            });
+            });
+         });
+     })(jQuery);
+     
+     
+    ;(function($) {
+        $(function() {
+            $('#stop_buildslave').bind('click', function(e) {
+                e.preventDefault();
+                $('#load_pop_up').bPopup({
+            content:'iframe',
+            contentContainer:'.content',
+            loadUrl: '/ae2/stopbuildslave'
+            });
+            });
+         });
+     })(jQuery);
+     
+     ;(function($) {
+        $(function() {
+            $('#start_buildslave').bind('click', function(e) {
+                e.preventDefault();
+                $('#load_pop_up').bPopup({
+            content:'iframe',
+            contentContainer:'.content',
+            loadUrl: '/ae2/startbuildslave'
+            });
+            });
+         });
+     })(jQuery);
+     
+     
+    ;(function($) {
+        $(function() {
+            $('#ae2_env_edit').bind('click', function(e) {
+                
+                window.location.assign("/ae2/editfile?location="+document.getElementById('ae2env').value);
+                e.preventDefault();
+            });
+         });
+     })(jQuery);
+     
+     
+    ;(function($) {
+        $(function() {
+            $('#ae2_suite_edit').bind('click', function(e) {
+                
+                window.location.assign("/ae2/editfile?location="+document.getElementById('ae2suite').value);
+                e.preventDefault();
+            });
+         });
+     })(jQuery);
+     
+     
+     
+     ;(function($) {
+        $(function() {
+            $('#ae2_env_copy').bind('click', function(e) {
+                var envfile = document.getElementById('ae2env').value;
+            
+                var myresponse = prompt("Enter the name for the copy of the environment file named '"+envfile+"'.");
+                
+                if (myresponse != null) {
+                    
+                        e.preventDefault();
+                        $('#load_pop_up').bPopup({
+                        content:'iframe',
+                        contentContainer:'.content',
+                        loadUrl: "/ae2/copyenv?original="+document.getElementById('ae2env').value+"&name="+myresponse //Uses jQuery.load()
+                        });
+                }
+                else
+                {
+                alert("Invalid name provided.");
+                }
+               
+            });
+         });
+     })(jQuery);
+     
+     
+    ;(function($) {
+        $(function() {
+            $('#ae2_suite_copy').bind('click', function(e) {
+                var suitefile = document.getElementById('ae2suite').value;
+            
+                var myresponse = prompt("Enter the name for the copy of the environment file named '"+suitefile+"'.");
+                
+                if (myresponse != null) {
+                    
+                        e.preventDefault();
+                        $('#load_pop_up').bPopup({
+                        content:'iframe',
+                        contentContainer:'.content',
+                        loadUrl: "/ae2/copysuite?original="+document.getElementById('ae2suite').value+"&name="+myresponse //Uses jQuery.load()
+                        });
+                }
+                else
+                {
+                alert("Invalid name provided.");
+                }
+               
+            });
+         });
+     })(jQuery);
+     
+    ;(function($) {
+        $(function() {
+            $('#ae2_env_new').bind('click', function(e) {
+                var envfile = document.getElementById('ae2env').value;
+            
+                var myresponse = prompt("Enter the name for the new environment file.");
+                
+                if (myresponse != null) {
+                    
+                        e.preventDefault();
+                        $('#load_pop_up').bPopup({
+                        content:'iframe',
+                        contentContainer:'.content',
+                        loadUrl: "/ae2/newenv?name="+myresponse //Uses jQuery.load()
+                        });
+                }
+                else
+                {
+                alert("Invalid name provided.");
+                }
+               
+            });
+         });
+     })(jQuery);
+     
+     ;(function($) {
+        $(function() {
+            $('#ae2_suite_new').bind('click', function(e) {
+                var suitefile = document.getElementById('ae2suite').value;
+            
+                var myresponse = prompt("Enter the name for the new suite file.");
+                
+                if (myresponse != null) {
+                    
+                        e.preventDefault();
+                        $('#load_pop_up').bPopup({
+                        content:'iframe',
+                        contentContainer:'.content',
+                        loadUrl: "/ae2/newsuite?name="+myresponse //Uses jQuery.load()
+                        });
+                }
+                else
+                {
+                alert("Invalid name provided.");
+                }
+               
+            });
+         });
+     })(jQuery);
+     
+     
+     ;(function($) {
+        $(function() {
+            $('#my-automation-settings-button').bind('click', function(e) {
+                
+                //alert('/ae2/run?ae2suite='+document.getElementById('ae2suite').value+'&ae2env='+document.getElementById('ae2env').value+'&fldcrpm='+document.getElementById('fldcrpm').value+'&fldcbranch='+document.getElementById('fldcbranch').value+'&fldccommit='+document.getElementById('fldccommit').value+'&fldctools='+document.getElementById('fldctools').value+'&fldcmuted='+document.getElementById('ae2mute').checked);
+                
+                e.preventDefault();
+                $('#load_pop_up').bPopup({
+            content:'iframe',
+            contentContainer:'.content',
+            loadUrl: '/ae2/automationsetup?os='+document.getElementById('os_auto').value+'&scheduler='+document.getElementById('scheduler_auto').value+'&compiler='+document.getElementById('compiler_auto').value+'&ae2suite='+document.getElementById('ae2suite_auto').value+'&ae2env='+document.getElementById('ae2env_auto').value+'&name='+document.getElementById('tester_name_auto').value+'&description='+document.getElementById('tester_description_auto').value //Uses jQuery.load()
+            });
+            });
+         });
+     })(jQuery);
+     
+     
+     ;(function($) {
+        $(function() {
+            $('#my-state-settings-button').bind('click', function(e) {
+                
+                //alert('/ae2/run?ae2suite='+document.getElementById('ae2suite').value+'&ae2env='+document.getElementById('ae2env').value+'&fldcrpm='+document.getElementById('fldcrpm').value+'&fldcbranch='+document.getElementById('fldcbranch').value+'&fldccommit='+document.getElementById('fldccommit').value+'&fldctools='+document.getElementById('fldctools').value+'&fldcmuted='+document.getElementById('ae2mute').checked);
+                
+                e.preventDefault();
+                $('#load_pop_up').bPopup({
+            content:'iframe',
+            contentContainer:'.content',
+            loadUrl: '/ae2/changecowmode?cowmode='+document.getElementById('id_cow_mode').value //Uses jQuery.load()
+            });
+            });
+         });
+     })(jQuery); 
+     
+     
+    
+</script>
+
+<script>
+<!--
+
+/*
+Auto Refresh Page with Time script
+By JavaScript Kit (javascriptkit.com)
+Over 200+ free scripts here!
+*/
+
+//enter refresh time in "minutes:seconds" Minutes should range from 0 to inifinity. Seconds should range from 0 to 59
+var limit="0:15"
+
+if (document.images){
+var parselimit=limit.split(":")
+parselimit=parselimit[0]*60+parselimit[1]*1
+}
+
+function beginrefresh(){
+if (!document.images)
+return
+if (parselimit==1)
+window.location.reload()
+else{ 
+parselimit-=1
+curmin=Math.floor(parselimit/60)
+cursec=parselimit%60
+if (curmin!=0)
+curtime=curmin+" minutes and "+cursec+" seconds left until page refresh!"
+else
+curtime=cursec+" seconds left until page refresh!"
+window.status=curtime
+setTimeout("beginrefresh()",1000)
+}
+}
+{% if runInfo.0.running%}
+window.onload=beginrefresh
+{% endif %}
+//-->
+
+</script>
+
+
+</footer>
+
+</html>

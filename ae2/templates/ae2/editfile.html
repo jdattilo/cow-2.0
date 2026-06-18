@@ -1,0 +1,13 @@
+<style>
+textarea { width: 100%; border: 1px solid #333; padding: 4px;
+    height: 75vh;}
+</style>
+<div style="padding:1em;">
+<form action="" method="post">
+    {% csrf_token %}
+    <textarea id = "output" name = "output" style="padding-right: 10px;">{{read_data}}</textarea>
+    <br>
+    <input type="submit" style = "margin-top:1em;" value="Save Changes" /> <a href="/"><input type="button" style = "margin-top:1em;" value="Cancel" /></a>
+</form>
+</div>
+

@@ -1,0 +1,143 @@
+{% load staticfiles %}
+{% load views_extras %}
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head profile="http://gmpg.org/xfn/11">
+
+	<title>COW RUNS {{cowstatus.host}}</title>
+
+	<!-- Meta Tags -->
+	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+	
+    <!-- Favicon Status -->
+    
+    <link rel="icon" 
+      type="image/png" 
+      href="static/images/{% if runInfo.running%}favicon-yellow.png{% elif runInfo.suite == "NA" %}favicon.png{% elif runInfo.passed == 0 and runInfo.needs_triage == 1 %}favicon-red.png{% elif runInfo.passed == 0 and runInfo.needs_triage == 0 %}favicon-red-standing.png{% else %}favicon-green.png{% endif %}">
+    
+    
+	<!-- JavaScript -->
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+    <script src="{% static "js/jquery.bpopup.min.js"%}"></script>
+    
+	<!-- CSS -->
+
+    <link rel="stylesheet" type="text/css" href="{% static "css/default.css"%}" />
+    <link rel="stylesheet" type="text/css" href="{% static "css/top-menu.css"%}" />
+    
+    <link rel="stylesheet" type="text/css" href="{% static "css/normalize.css"%}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/main.css"%}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/component.css"%}" />
+    
+</head>
+
+<body>
+
+<div style="left: 275.5px; position: absolute; top: 1950px; z-index: 9999; opacity: 1; display: block; height: auto; display:none;" id="load_pop_up">
+        <span class="button b-close"><span>X</span></span>
+        <div style="height: auto; width: auto; background-color:white;" class="content" style="vertical-align:middle;"><center><img style = "margin-top:50%;" src="/static/images/pleasewait.gif"></center></div>
+</div>
+
+        <!--Main Menu-->
+        
+        <div id='cssmenu'>
+<ul>
+   <li class='has-sub'><a href='/'>COW</a>
+   <ul>
+         <li><a href="/">COW Dashboard</a></li>
+         <li><a href="/activities" target = "_EMPTY">COW Activity Logs</a></li>
+         <li><a href="/runs" target = "_EMPTY">COW Run Logs</a></li>
+      </ul>
+   </li>
+   <li class='has-sub'><a href=''>Logs</a>
+      <ul>
+         <li><a href="/logview/stdio.log/{{runInfo.buildnumber}}" target = "_EMPTY">STDIO</a></li>
+         <li><a href="/logview/cow-ae-run.log/{{runInfo.buildnumber}}" target = "_EMPTY">AE2</a></li>
+         <li><a href="/logview/cow-ae-run_debug.log/{{runInfo.buildnumber}}" target = "_EMPTY">AE2 DEBUG</a></li>
+      </ul>
+   </li>
+  <li class='has-sub'><a href='http://cattle.yourdomain.com' target='_blank'>CATTLE</a>
+      <ul>
+         <li><a href='http://cattle.yourdomain.com/runs/builder/{{cowstatus.host}}/' target='_blank'>Build List</a></li>
+         <li><a href='http://cattle.yourdomain.com' target='_blank'>Report List</a></li>
+      </ul>
+   </li>
+   <li class='has-sub'><a href='http://cowtracks.yourdomain.com' target='_blank'>Cowtracks</a>
+      <ul>
+         <li><a href='http://cowtracks.yourdomain.com/view/{{cowstatus.host}}/{{runInfo.buildnumber}}/' target='_blank'>Current Build</a></li>
+         <li><a href='http://cowtracks.yourdomain.com/view/{{cowstatus.host}}/' target='_blank'>Build List</a></li>
+         <li><a href='http://cowtracks.yourdomain.com' target='_blank'>Cow List</a></li>
+      </ul>
+   </li>
+   <li><a href='http://confluence.pdc.dell.com/display/SQA/COW+Help+Directory' target='_blank'>COW Help</a></li>
+   <li><a href='http://jira.yourdomain.com/browse/AUTO-1378' target='_blank'>report a bug/request a feature</a></li>
+   <li class='has-sub'><a href=''>Other Tools</a>
+      <ul>
+         <li><a href='http://cattle.yourdomain.com' target='_blank'>CATTLE</a></li>
+         <li><a href='http://cowtracks.yourdomain.com' target='_blank'>COWTRACKS</a></li>
+         <li><a href='http://b2eb.yourdomain.com' target='_blank'>B2EB (STAT2)</a></li>
+      </ul>
+   </li>
+   <li>
+   {% if request.user.is_authenticated %}
+    <a href="/accounts/logout/">Welcome, {{ request.user.get_username }}. Thanks for logging in. (LOGOUT)</a>
+{% else %}
+    <a href="/accounts/login/?next=/">PLEASE LOGIN.</a>
+{% endif %}
+   </li>
+</ul>
+</div>
+
+<div id="container">
+    <h1><span>COW RUN HISTORY {{cowstatus.host}}</span></h1>
+    <div style = "color:#000;">Running as {%if cowstatus.dev%} Dev Server {% else %} WSGI module {% endif %} from {{cowstatus.root}}. Crontab for COW is {{cowstatus.crontab | safe}}</div>
+	<div style = "color:#000;">Last Queuemaster update at {{AE2Settings.lastqueuecheck}}
+    <!-- This is where the logs should be rendered -->
+    
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Date and Time</th><th>Build Info</th><th>Branch</th><th>Duration</th><th>Logs</th><th>Results</th>
+            </tr>
+        </thead>
+        <tbody>
+        
+        {% for run in myRuns %}
+        <tr>
+        <td class="DTG">{{run.end_time|date:"d M H:m"}}</td><td class="BUILDINFO">
+        {{run.operating_system}} on <a href="http://cattle.yourdomain.com/runs/builder/{{run.builder|address_tail}}/" target="_EMPTY">{{run.builder|address_tail}}</a>
+        <br>Build: <a href = "http://cowtracks.yourdomain.com/view/qavm52.yourdomain.com/{{run.build_number}}/" target = "_EMPTY">{{run.build_number}} Logs</a> Commit <a href="http://cattle.yourdomain.com/runs/bycommit/{{run.commit}}/" target = "_BLANK">{{run.commit}}</a> 
+        <br>STE: {{run.suite_file|suite_link}}
+        <br>ENV: {{run.env_file|env_link}}</td>
+        <td class="type">
+        {{ run.parent_branch }}</td><td class="action">{{ run.end_time|subtractdate:run.start_time|format_time }}</td>
+        <td>
+        
+         <br><a href="/logview/stdio.log/{{run.build_number}}" target = "_EMPTY">STDIO</a>
+         <br><a href="/logview/cow-ae-run.log/{{run.build_number}}" target = "_EMPTY">AE2</a>
+         <br><a href="/logview/cow-ae-run_debug.log/{{run.build_number}}" target = "_EMPTY">AE2 DEBUG</a>
+      
+        </td>
+        <td class="arguments"><br>{{ run.run_results|translate_PF }}
+        </td>
+        </tr>
+        {% endfor %}
+						
+					</tbody>
+				</table>
+    
+    
+    
+</div>
+	
+</body>
+
+<footer>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/jquery-throttle-debounce/1.1/jquery.ba-throttle-debounce.min.js"></script>
+<script src="static/js/jquery.stickyheader.js"></script>
+</footer>
+
+</html>
